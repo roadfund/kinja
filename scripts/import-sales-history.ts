@@ -3,7 +3,7 @@
 //   pnpm import:sheet --sheet "<google sheet link>" --hub "Jimmy's Group"          (shows the plan)
 //   pnpm import:sheet --sheet "<google sheet link>" --hub "Jimmy's Group" --yes    (writes)
 //
-// Reads DATABASE_URL from .env.production.local (or the environment). The hub must already
+// Reads DATABASE_URL from .env.production.local, else .env.local, else the environment. The hub must already
 // exist and be verified: its admin signs up and onboards it, and the tech admin verifies it.
 // Organizations the history needs (sales, production, farmers) are created if the hub has none;
 // no user accounts are ever created here. Safe to run again: only new orders are added.
@@ -14,7 +14,7 @@ import { importSalesHistory } from "@/dev/sales-import";
 import { loadSheetTabs, sheetIdFrom } from "@/dev/sheet-source";
 import { getRepository } from "@/repositories/server";
 
-try { loadEnvFile(".env.production.local"); } catch { /* fall back to the environment */ }
+for (const file of [".env.production.local", ".env.local"]) { try { loadEnvFile(file); } catch { /* not there: try the next, or use the environment */ } }
 
 function arg(name: string): string | undefined {
   const index = process.argv.indexOf(`--${name}`);

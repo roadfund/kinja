@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, FileCheck2, LoaderCircle, LocateFixed, Upload } from "lucide-react";
+import { FileCheck2, LoaderCircle, LocateFixed, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { inputClass, Label } from "@/components/kinja/form";
@@ -14,11 +14,10 @@ function Section({ title, description, children }: { title: string; description?
   return <fieldset className="space-y-4 rounded-2xl border border-[#dce2d9] bg-white p-5"><legend className="px-1 font-semibold text-[var(--kinja-green)]">{title}</legend>{description && <p className="-mt-2 text-sm text-[#718074]">{description}</p>}{children}</fieldset>;
 }
 
-export function OnboardingForm({ countries, crops, categories }: { countries: CountryOption[]; crops: Array<{ id: string; name: string }>; categories: readonly string[] }) {
+export function OnboardingForm({ countries, categories }: { countries: CountryOption[]; categories: readonly string[] }) {
   const router = useRouter();
   const { run, pending, error, setError } = useJsonAction();
   const [countryId, setCountryId] = useState(countries.length === 1 ? countries[0].id : "");
-  const [mainCropIds, setMainCropIds] = useState<string[]>([]);
   const [gps, setGps] = useState("");
   const [locating, setLocating] = useState(false);
   const [certificate, setCertificate] = useState<{ url: string; name: string } | null>(null);
@@ -53,9 +52,8 @@ export function OnboardingForm({ countries, crops, categories }: { countries: Co
     event.preventDefault();
     if (!event.currentTarget.reportValidity()) return;
     if (!certificate) return setError("Upload your business registration certificate.");
-    if (mainCropIds.length === 0) return setError("Choose at least one main crop.");
     const data = Object.fromEntries(new FormData(event.currentTarget));
-    const result = await run<{ redirect?: string }>("/auth/onboarding/submit", { ...data, countryId, gps, mainCropIds, registrationCertificateUrl: certificate.url, logoUrl });
+    const result = await run<{ redirect?: string }>("/auth/onboarding/submit", { ...data, countryId, gps, registrationCertificateUrl: certificate.url, logoUrl });
     if (result?.redirect) router.push(result.redirect);
   }
 
@@ -99,7 +97,6 @@ export function OnboardingForm({ countries, crops, categories }: { countries: Co
     </Section>
 
     <Section title="Operations">
-      <div><p className="text-sm font-medium text-[#344e41]">Main crops handled <span className="text-[#b42318]">*</span></p><div className="mt-2 flex flex-wrap gap-2">{crops.map((crop) => { const on = mainCropIds.includes(crop.id); return <button aria-pressed={on} className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium ${on ? "border-[var(--kinja-green)] bg-[#e7eee4] text-[var(--kinja-green)]" : "border-[#cbd2c9] bg-white text-[#5d685e]"}`} key={crop.id} onClick={() => setMainCropIds(on ? mainCropIds.filter((id) => id !== crop.id) : [...mainCropIds, crop.id])} type="button">{on && <Check size={15} aria-hidden="true" />}{crop.name}</button>; })}</div></div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Label required text="Approximate number of farmers"><input className={inputClass} min={0} name="approximateFarmerCount" required type="number" /></Label>
         <Label required text="Approximate number of cooperatives"><input className={inputClass} min={0} name="approximateCooperativeCount" required type="number" /></Label>

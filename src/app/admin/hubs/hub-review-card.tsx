@@ -8,7 +8,7 @@ function Detail({ label, value }: { label: string; value?: React.ReactNode }) {
   return <div className="min-w-0"><dt className="text-xs uppercase tracking-wide text-[#718074]">{label}</dt><dd className={`mt-1 text-sm font-medium ${value ? "text-[#344e41]" : "text-[#9aa69c]"}`}>{value ?? "Not provided"}</dd></div>;
 }
 
-export function HubReviewCard({ initialHub, cropNames, countryName }: { initialHub: Hub; cropNames: string[]; countryName?: string }) {
+export function HubReviewCard({ initialHub, countryName }: { initialHub: Hub; countryName?: string }) {
   const [hub, setHub] = useState(initialHub);
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
@@ -43,7 +43,6 @@ export function HubReviewCard({ initialHub, cropNames, countryName }: { initialH
       <Detail label="Contact person" value={`${hub.contactPerson.fullName}, ${hub.contactPerson.title}`} />
       <Detail label="Contact phone and email" value={`${hub.contactPerson.phone} · ${hub.contactPerson.email}`} />
       <Detail label="Website" value={hub.websiteOrSocialPage ? <a className="break-all underline" href={hub.websiteOrSocialPage} rel="noreferrer" target="_blank">{hub.websiteOrSocialPage}</a> : undefined} />
-      <Detail label="Main crops" value={cropNames.join(", ") || undefined} />
       <Detail label="Works with" value={`About ${hub.approximateFarmerCount} farmers and ${hub.approximateCooperativeCount} cooperatives`} />
       <Detail label="Submitted" value={new Date(hub.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} />
     </dl><label className="mt-6 block text-sm font-medium text-[#344e41]">Rejection reason <span className="font-normal text-[#718074]">(only required when rejecting)</span><textarea className="mt-2 min-h-24 w-full rounded-xl border border-[#cbd2c9] bg-white p-3 outline-none focus:border-[var(--kinja-green)] focus:ring-2 focus:ring-[#344e41]/10" placeholder="Explain what needs to be corrected" value={reason} onChange={(event) => setReason(event.target.value)} /></label>{error && <p className="mt-3 text-sm font-medium text-[#b42318]" role="alert">{error}</p>}<div className="mt-6 flex flex-wrap gap-3"><button className="inline-flex items-center gap-2 rounded-xl bg-[var(--kinja-green)] px-5 py-3 font-semibold text-white" disabled={pending !== null} onClick={() => updateHub("VERIFIED")} type="button">{pending === "VERIFIED" ? <LoaderCircle className="animate-spin" aria-hidden="true" size={17} /> : <Check aria-hidden="true" size={17} />}{pending === "VERIFIED" ? "Verifying…" : "Verify hub"}</button><button className="inline-flex items-center gap-2 rounded-xl border border-[#e0b4b0] px-5 py-3 font-semibold text-[#a33b32]" disabled={pending !== null} onClick={() => updateHub("REJECTED")} type="button">{pending === "REJECTED" ? <LoaderCircle className="animate-spin" aria-hidden="true" size={17} /> : <X aria-hidden="true" size={17} />}{pending === "REJECTED" ? "Rejecting…" : "Reject"}</button></div></div>;

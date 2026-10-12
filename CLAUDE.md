@@ -53,7 +53,7 @@ Onboarding paths:
    - Country, region or county, physical address, GPS location (optional)
    - Business registration number and registration certificate (upload), tax ID (optional)
    - Contact person: full name, title, phone, email
-   - Main crops handled, approximate number of farmers and cooperatives it works with
+   - Approximate number of farmers and cooperatives it works with (crops are chosen later, in hub setup)
    - Logo and website or social page (optional)
 
    The hub is created with status `PENDING_VERIFICATION` and the user becomes its hub admin. The hub admin can configure crops, grades and prices while pending, but cannot send invites or run payouts until the tech admin verifies the hub.

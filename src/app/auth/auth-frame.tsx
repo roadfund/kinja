@@ -10,7 +10,7 @@ export function AuthFrame({ children, eyebrow, title, description }: { children:
       <div className="absolute inset-0 bg-[#1e3027]/60" />
       <div className="relative flex h-full flex-col p-12">
         <Link href="/" className="flex items-center gap-2 text-2xl font-bold tracking-tight"><Leaf aria-hidden="true" size={22} strokeWidth={2.5} />kinja<span className="text-[var(--kinja-yellow)]">.</span></Link>
-        <div className="my-auto"><p className="mb-5 text-sm uppercase tracking-[0.22em] text-[#f1f4e9]">Connected agriculture</p><p className="max-w-lg text-4xl font-semibold leading-[1.08] tracking-tight">The Operating System for Africa&apos;s Agricultural Value Chains<span className="text-[var(--kinja-yellow)]">.</span></p></div>
+        <div className="my-auto"><p className="mb-5 text-sm uppercase tracking-[0.22em] text-[#f1f4e9]"></p><p className="max-w-lg text-4xl font-semibold leading-[1.08] tracking-tight">The Operating System for Africa&apos;s Agricultural Value Chains<span className="text-[var(--kinja-yellow)]">.</span></p></div>
       </div>
     </section>
     <section className="flex items-center px-6 py-12 sm:px-16"><div className="mx-auto w-full max-w-md">
