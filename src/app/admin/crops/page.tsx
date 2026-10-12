@@ -3,7 +3,7 @@ import { getCropSetup } from "@/admin/hub-crop-setup";
 import { formatRate, rateAt } from "@/domain/currency";
 import { requireDashboardRole } from "@/auth/route-authorization";
 import { DashboardShell, SummaryCard, SummaryGrid } from "@/components/kinja/ui";
-import { CropSetupCard } from "./crop-setup-form";
+import { CropSetupBoard } from "./crop-setup-form";
 
 export default async function CropSetupPage() {
   const account = await requireDashboardRole(["HUB_ADMIN"]);
@@ -18,7 +18,7 @@ export default async function CropSetupPage() {
       <SummaryCard detail="Across enabled crops" label="Grades" value={enabled.reduce((sum, crop) => sum + crop.grades.length, 0)} />
       <SummaryCard detail={others.length ? rates.join(" · ") : "Amounts are stored in whole minor units"} label="Currency" value={[currency, ...others].join(" · ")} />
     </SummaryGrid>
-    <div className="mt-8 grid gap-4 xl:grid-cols-2">{crops.map((crop) => <CropSetupCard crop={crop} currency={currency} key={crop.cropId} money={money} />)}</div>
+    <CropSetupBoard crops={crops} currency={currency} money={money} />
     {crops.length === 0 && <p className="mt-8 rounded-2xl border border-dashed border-[#cbd2c9] bg-white/60 p-6 text-[#5d685e]">The master crop list is empty. A Kinja tech admin needs to add crops first.</p>}
   </DashboardShell>;
 }

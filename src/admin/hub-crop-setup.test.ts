@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { getCropSetup, saveCropSetup } from "@/admin/hub-crop-setup";
+import { getCropSetup, saveCropSetup, saveCropSetups } from "@/admin/hub-crop-setup";
 import type { Account } from "@/auth/server-store";
 import { loadSeedData } from "@/dev/seed";
 import { listHubCropOptions } from "@/field/deliveries";
@@ -46,5 +46,16 @@ describe("hub crop setup", () => {
   it("works while the hub is pending verification", async () => {
     const pendingAdmin = await seededAccount("pendingadmin");
     expect((await saveCropSetup(pendingAdmin, { cropId: "cassava", enabled: true, grades: [{ name: "A", priceMinorPerKg: 600 }] })).hubId).toBe(pendingAdmin.hub!.id);
+  });
+
+  it("saves several crops at once and reports a bad one without blocking the rest", async () => {
+    const hubAdmin = await seededAccount("hubadmin");
+    const results = await saveCropSetups(hubAdmin, { crops: [
+      { cropId: "rice", enabled: true, grades: [{ name: "Premium", priceMinorPerKg: 1500 }] },
+      { cropId: "plantain", enabled: true, grades: [{ name: "A", priceMinorPerKg: 900 }, { name: "a", priceMinorPerKg: 800 }] },
+    ] });
+    expect(results.find((result) => result.cropId === "rice")).toMatchObject({ enabled: true, grades: [{ name: "Premium", priceMinorPerKg: 1500 }] });
+    expect(results.find((result) => result.cropId === "plantain")?.error).toMatch("different name");
+    expect((await getCropSetup(hubAdmin)).crops.find((crop) => crop.cropId === "rice")?.enabled).toBe(true);
   });
 });
