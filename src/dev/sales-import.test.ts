@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { loadSeedData } from "@/dev/seed";
-import { importSalesHistory, normalizePhone, parseCents, parseDate } from "@/dev/sales-import";
+import { demoImportTarget, importSalesHistory, normalizePhone, parseCents, parseDate } from "@/dev/sales-import";
 import { parseCsv } from "@/dev/sheet-source";
 import { listInvoices } from "@/market/market-service";
 import { orderDashboard } from "@/market/orders";
@@ -46,7 +46,7 @@ describe("sales history import", () => {
   });
 
   it("imports orders, payments, cancellations and rates, and the dashboards add up", async () => {
-    const summary = await importSalesHistory([customers, reference, payments, deliveries, lines]);
+    const summary = await importSalesHistory([customers, reference, payments, deliveries, lines], await demoImportTarget());
     expect(summary).toMatchObject({ orders: 4, lines: 5, customers: 3, cancelled: 1, skus: ["SKU_A", "SKU_B"], rates: 1, firstDate: "2021-02-12", lastDate: "2021-03-02" });
 
     const distributor = await seededAccount("distributor");
@@ -63,7 +63,15 @@ describe("sales history import", () => {
     expect((await getRepository().list("Customer", distributor.hub!.id)).find((customer) => customer.name === "Test Shop")).toMatchObject({ phone: "+231770000123", address: "14th Street" });
   });
 
+  it("adds only new orders when run again", async () => {
+    const target = await demoImportTarget();
+    await importSalesHistory([customers, reference, payments, deliveries, lines], target);
+    const again = await importSalesHistory([customers, reference, payments, deliveries, lines], target);
+    expect(again).toMatchObject({ alreadyImported: 4, orders: 0, customers: 0, invoices: 0 });
+    expect(await getRepository().list("Order", target.hubId)).toHaveLength(4);
+  });
+
   it("refuses a sheet without order lines", async () => {
-    await expect(importSalesHistory([payments])).rejects.toThrow("order lines");
+    await expect(importSalesHistory([payments], await demoImportTarget())).rejects.toThrow("order lines");
   });
 });

@@ -1,15 +1,22 @@
 import { join } from "node:path";
+import postgres from "postgres";
 import { FileStorage } from "@/repositories/file-storage";
 import { LocalStorageRepository } from "@/repositories/local-storage";
+import { PostgresRepository, type SqlClient } from "@/repositories/postgres";
 import type { Repository } from "@/repositories/repository";
 
-// The one place that decides which store the server uses. When a database is
-// chosen, return its Repository implementation here and nothing else changes.
+// The one place that decides which store the server uses:
+// - DATABASE_URL set (production on Vercel, or the import script): Postgres on Neon.
+// - otherwise, in development only: a JSON file under .data/ (one machine, no setup).
+// Production never falls back to the file: Vercel's file system is read-only and not shared
+// between instances, so sign-in would fail silently.
 //
-// Only the raw storage is kept on globalThis. The repository is rebuilt on each
-// call so it always validates with the current schemas, even after hot reloads.
+// Only the raw connection or storage is kept on globalThis, so it survives hot reloads and
+// serverless warm starts; repositories are cheap and rebuilt on each call.
 type ServerData = { storage: FileStorage; isFresh: boolean };
-const runtime = globalThis as typeof globalThis & { __kinjaStorage?: ServerData; __kinjaTestRepository?: Repository };
+const runtime = globalThis as typeof globalThis & { __kinjaStorage?: ServerData; __kinjaSql?: { sql: ReturnType<typeof postgres>; client: SqlClient }; __kinjaTestRepository?: Repository };
+
+export const usesDatabase = () => Boolean(process.env.DATABASE_URL);
 
 function serverData(): ServerData {
   if (!runtime.__kinjaStorage) {
@@ -19,13 +26,26 @@ function serverData(): ServerData {
   return runtime.__kinjaStorage;
 }
 
-export function getRepository(): Repository {
-  return runtime.__kinjaTestRepository ?? new LocalStorageRepository(serverData().storage);
+function databaseRepository(): Repository {
+  // prepare: false works with Neon's pooled (PgBouncer) connection string. One client per
+  // server instance, so the table is set up once and connections are reused.
+  if (!runtime.__kinjaSql) {
+    const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: Number(process.env.DATABASE_MAX_CONNECTIONS ?? 5), idle_timeout: 20, onnotice: () => {} });
+    runtime.__kinjaSql = { sql, client: { query: (text, params = []) => sql.unsafe(text, params as never[]) as never } };
+  }
+  return new PostgresRepository(runtime.__kinjaSql.client);
 }
 
-// True when the data file did not exist when the server started (a fresh checkout).
+export function getRepository(): Repository {
+  if (runtime.__kinjaTestRepository) return runtime.__kinjaTestRepository;
+  if (usesDatabase()) return databaseRepository();
+  if (process.env.NODE_ENV === "production") throw new Error("DATABASE_URL is not set. Production needs the Neon Postgres database: add DATABASE_URL to the Vercel project's environment variables.");
+  return new LocalStorageRepository(serverData().storage);
+}
+
+// True when the local data file did not exist when the server started (a fresh checkout).
 export function isFreshDataStore(): boolean {
-  return runtime.__kinjaTestRepository ? false : serverData().isFresh;
+  return runtime.__kinjaTestRepository || usesDatabase() ? false : serverData().isFresh;
 }
 
 export function setRepositoryForTesting(repository: Repository): void {

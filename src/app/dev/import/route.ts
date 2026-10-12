@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { devToolsNotFound } from "@/dev/guard";
-import { importSalesHistory } from "@/dev/sales-import";
+import { demoImportTarget, importSalesHistory } from "@/dev/sales-import";
 import { loadSeedData } from "@/dev/seed";
 import { loadSheetTabs, sheetIdFrom } from "@/dev/sheet-source";
 
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     const sheetId = sheetIdFrom(String((await request.formData()).get("sheet") ?? ""));
     const { tabs, fromCache } = await loadSheetTabs(sheetId);
     await loadSeedData({ withSampleSales: false });
-    const summary = await importSalesHistory(tabs);
+    const summary = await importSalesHistory(tabs, await demoImportTarget());
     const params = new URLSearchParams({ done: "imported", orders: String(summary.orders), customers: String(summary.customers), invoices: String(summary.invoices), from: summary.firstDate, to: summary.lastDate, cached: fromCache ? "1" : "", skipped: summary.skipped.slice(0, 5).join("; ") });
     return NextResponse.redirect(new URL(`/dev?${params}`, request.url), 303);
   } catch (error) {

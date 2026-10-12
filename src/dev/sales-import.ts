@@ -9,7 +9,10 @@ import { getRepository } from "@/repositories/server";
 // Records are written as they were: orders keep their own numbers (JSK0001) as the reference.
 
 type Table = { rows: string[][]; col: (name: string, after?: number) => number };
-export type ImportSummary = { orders: number; lines: number; customers: number; invoices: number; collections: number; cancelled: number; skus: string[]; rates: number; firstDate: string; lastDate: string; skipped: string[] };
+// Where the history goes: the hub, the organizations that sold and made the goods, and the
+// people recorded as having entered it.
+export type ImportTarget = { hubId: string; distributorId: string; manufacturerId: string; cooperativeId: string; distributorUserId: string; manufacturerUserId: string };
+export type ImportSummary = { alreadyImported: number; orders: number; lines: number; customers: number; invoices: number; collections: number; cancelled: number; skus: string[]; rates: number; firstDate: string; lastDate: string; skipped: string[] };
 
 const clean = (value: string | undefined) => (value ?? "").replace(/\s+/g, " ").trim();
 const norm = (value: string) => clean(value).toLowerCase();
@@ -60,7 +63,18 @@ const channels: Record<string, OrderChannel> = { phone: "PHONE", whatsapp: "WHAT
 const methods: Record<string, PaymentMethod> = { cash: "CASH", "mtn mobilemoney": "MOBILE_MONEY", "orange money": "MOBILE_MONEY", tipme: "MOBILE_MONEY", paypal: "BANK_TRANSFER", check: "BANK_TRANSFER" };
 const noon = (date: string) => `${date}T12:00:00.000Z`;
 
-export async function importSalesHistory(tabs: string[][][], now = new Date()): Promise<ImportSummary> {
+// The demo hub from the seed (dev tools and tests).
+export async function demoImportTarget(): Promise<ImportTarget> {
+  const memberships = await getRepository().list("Membership", seedIds.verifiedHub);
+  const distributorUserId = memberships.find((membership) => membership.organizationId === seedIds.distributor)?.userId;
+  const manufacturerUserId = memberships.find((membership) => membership.organizationId === seedIds.manufacturer)?.userId;
+  if (!distributorUserId || !manufacturerUserId) throw new Error("Load the demo data first: the import needs the seeded distributor and manufacturer");
+  return { hubId: seedIds.verifiedHub, distributorId: seedIds.distributor, manufacturerId: seedIds.manufacturer, cooperativeId: seedIds.cooperative, distributorUserId, manufacturerUserId };
+}
+
+// Safe to run again: orders already imported (same order number) and known customers are
+// skipped, so re-running after the sheet grows adds only what is new.
+export async function importSalesHistory(tabs: string[][][], target: ImportTarget, now = new Date()): Promise<ImportSummary> {
   const lines = findTable(tabs, ["Status", "Order No.", "SKU", "Quantity", "Customer Category"]);
   if (!lines) throw new Error("No tab with order lines (Status, Order No., SKU, Quantity, Customer Category) was found");
   const payments = findTable(tabs, ["Order No", "USD Payment", "LRD Payment", "Total USD Payment"]);
@@ -69,11 +83,7 @@ export async function importSalesHistory(tabs: string[][][], now = new Date()): 
   const customerList = findTable(tabs, ["Customer", "Contact", "Address", "Last Order Date"]);
 
   const repository = getRepository();
-  const hubId = seedIds.verifiedHub;
-  const memberships = await repository.list("Membership", hubId);
-  const distributorUser = memberships.find((membership) => membership.organizationId === seedIds.distributor)?.userId;
-  const manufacturerUser = memberships.find((membership) => membership.organizationId === seedIds.manufacturer)?.userId;
-  if (!distributorUser || !manufacturerUser) throw new Error("Load the demo data first: the import needs the seeded distributor and manufacturer");
+  const { hubId, distributorId, manufacturerId, cooperativeId, distributorUserId: distributorUser, manufacturerUserId: manufacturerUser } = target;
   const skipped: string[] = [];
   const audit = (by: string, at: string) => ({ createdById: by, createdAt: at, updatedAt: at });
 
@@ -92,12 +102,15 @@ export async function importSalesHistory(tabs: string[][][], now = new Date()): 
     if (quantity > 0 && Number.isInteger(quantity)) draft.lines.push({ sku: clean(row[L.sku]), quantity, priceMinor: parseCents(row[L.price]), valueMinor: parseCents(row[L.value]), paymentMinor: parseCents(row[L.payment]) });
     drafts.set(number, draft);
   }
-  const orders = [...drafts.values()].filter((draft) => {
+  const allOrders = [...drafts.values()].filter((draft) => {
     if (draft.lines.length) return true;
     skipped.push(`${draft.number}: no quantities`);
     return false;
   }).sort((a, b) => a.date.localeCompare(b.date) || a.number.localeCompare(b.number));
-  if (orders.length === 0) throw new Error("The order lines tab has no orders with quantities");
+  if (allOrders.length === 0) throw new Error("The order lines tab has no orders with quantities");
+  const existingOrders = await repository.list("Order", hubId);
+  const imported = new Set(existingOrders.map((order) => order.reference).filter(Boolean));
+  const orders = allOrders.filter((draft) => !imported.has(draft.number));
 
   // ---- Deliveries (who, when) and cancellations (why) ----
   const deliveredBy = new Map<string, { by?: string; on?: string }>();
@@ -118,39 +131,40 @@ export async function importSalesHistory(tabs: string[][][], now = new Date()): 
     const [name, phone, address] = [customerList.col("Customer"), customerList.col("Contact"), customerList.col("Address")];
     for (const row of customerList.rows) if (clean(row[name])) contacts.set(customerKey(row[name]), { phone: normalizePhone(row[phone]), address: clean(row[address]) || undefined });
   }
+  // Known customers are reused; only new names become new customers.
+  const known = new Map((await repository.list("Customer", hubId)).map((customer) => [customerKey(customer.name) || "walkin", customer]));
   const customers = new Map<string, Customer>();
   for (const order of orders) {
     const key = customerKey(order.name) || "walkin";
-    if (customers.has(key)) continue;
+    if (customers.has(key) || known.has(key)) continue;
     const contact = contacts.get(key);
     customers.set(key, { id: createUuidV7(), hubId, name: order.name || "Walk-in customer", phone: contact?.phone, address: contact?.address, paymentTermsDays: 0, ...audit(distributorUser, noon(order.date)) });
   }
 
   // ---- Products and opening stock: a batch per SKU, shipped to the distributor ----
   const skuNames = [...new Set(orders.flatMap((order) => order.lines.map((line) => line.sku)))].sort();
-  const firstDate = orders[0].date;
+  const firstDate = orders[0]?.date ?? "";
   const stockDay = noon(firstDate);
   const existingProducts = await repository.list("Product", hubId);
-  const batchNumber = (await repository.list("Batch", hubId)).filter((batch) => batch.organizationId === seedIds.manufacturer).reduce((max, batch) => Math.max(max, batch.number), 0);
-  const raw: Transfer = { id: createUuidV7(), hubId, kind: "RAW_MATERIAL", fromOrganizationId: seedIds.cooperative, toOrganizationId: seedIds.manufacturer, deliveryIds: [], unit: "KG", quantitySent: "0", quantityReceived: "0", status: "RECEIVED", hasDiscrepancy: false, note: "Opening stock for the imported sales history", receivedAt: stockDay, receivedById: manufacturerUser, ...audit(manufacturerUser, stockDay) };
+  const batchNumber = (await repository.list("Batch", hubId)).filter((batch) => batch.organizationId === manufacturerId).reduce((max, batch) => Math.max(max, batch.number), 0);
+  const raw: Transfer = { id: createUuidV7(), hubId, kind: "RAW_MATERIAL", fromOrganizationId: cooperativeId, toOrganizationId: manufacturerId, deliveryIds: [], unit: "KG", quantitySent: "0", quantityReceived: "0", status: "RECEIVED", hasDiscrepancy: false, note: "Opening stock for the imported sales history", receivedAt: stockDay, receivedById: manufacturerUser, ...audit(manufacturerUser, stockDay) };
   const products: Product[] = [];
   const batches: Batch[] = [];
-  const shipments: Transfer[] = [raw];
+  const shipments: Transfer[] = skuNames.length ? [raw] : [];
   const batchFor = new Map<string, Batch>();
   skuNames.forEach((sku, index) => {
-    const product = existingProducts.find((item) => item.name === sku) ?? { id: createUuidV7(), hubId, organizationId: seedIds.manufacturer, name: sku, unit: "UNIT" as const, ...audit(manufacturerUser, stockDay) };
+    const product = existingProducts.find((item) => item.name === sku) ?? { id: createUuidV7(), hubId, organizationId: manufacturerId, name: sku, unit: "UNIT" as const, ...audit(manufacturerUser, stockDay) };
     if (!existingProducts.includes(product)) products.push(product);
     // Everything ever ordered, plus 10 cartons of 12 left over for live demos.
     const units = orders.reduce((sum, order) => sum + order.lines.filter((line) => line.sku === sku).reduce((total, line) => total + line.quantity, 0), 0) + 120;
-    const batch: Batch = { id: createUuidV7(), hubId, organizationId: seedIds.manufacturer, number: batchNumber + index + 1, productId: product.id, transferIds: [raw.id], inputKg: "0", quantityProduced: String(units), wastageKg: "0", producedAt: stockDay, ...audit(manufacturerUser, stockDay) };
+    const batch: Batch = { id: createUuidV7(), hubId, organizationId: manufacturerId, number: batchNumber + index + 1, productId: product.id, transferIds: [raw.id], inputKg: "0", quantityProduced: String(units), wastageKg: "0", producedAt: stockDay, ...audit(manufacturerUser, stockDay) };
     batches.push(batch);
     batchFor.set(sku, batch);
-    shipments.push({ id: createUuidV7(), hubId, kind: "FINISHED_GOODS", fromOrganizationId: seedIds.manufacturer, toOrganizationId: seedIds.distributor, deliveryIds: [], productId: product.id, batchId: batch.id, unit: "UNIT", quantitySent: String(units), quantityReceived: String(units), status: "RECEIVED", hasDiscrepancy: false, note: "Opening stock for the imported sales history", receivedAt: stockDay, receivedById: distributorUser, ...audit(manufacturerUser, stockDay) });
+    shipments.push({ id: createUuidV7(), hubId, kind: "FINISHED_GOODS", fromOrganizationId: manufacturerId, toOrganizationId: distributorId, deliveryIds: [], productId: product.id, batchId: batch.id, unit: "UNIT", quantitySent: String(units), quantityReceived: String(units), status: "RECEIVED", hasDiscrepancy: false, note: "Opening stock for the imported sales history", receivedAt: stockDay, receivedById: distributorUser, ...audit(manufacturerUser, stockDay) });
   });
   const productFor = (sku: string) => batchFor.get(sku)!.productId;
 
   // ---- Orders and their sales ----
-  const existingOrders = await repository.list("Order", hubId);
   let orderNumber = existingOrders.reduce((max, order) => Math.max(max, order.number), 0);
   const orderRecords: Order[] = [];
   const sales: Sale[] = [];
@@ -158,15 +172,15 @@ export async function importSalesHistory(tabs: string[][][], now = new Date()): 
   const orderByReference = new Map<string, Order>();
   for (const draft of orders) {
     const at = noon(draft.date);
-    const customer = customers.get(customerKey(draft.name) || "walkin")!;
+    const customer = customers.get(customerKey(draft.name) || "walkin") ?? known.get(customerKey(draft.name) || "walkin")!;
     const cancelled = draft.status === "cancelled";
     const pending = draft.status === "pending";
     const delivery = deliveredBy.get(draft.number);
     const deliveredOn = [delivery?.on, draft.deliveredOn].find((date): date is string => Boolean(date && date >= draft.date && date <= now.toISOString().slice(0, 10))) ?? draft.date;
-    const order: Order = { id: createUuidV7(), hubId, distributorId: seedIds.distributor, number: (orderNumber += 1), reference: draft.number, customerId: customer.id, orderedOn: draft.date, category: draft.category, channel: draft.channel, status: cancelled ? "CANCELLED" : pending ? "PENDING" : "DELIVERED", discountBasisPoints: Math.min(10_000, Math.max(0, draft.discount)), deliveredBy: cancelled || pending ? undefined : delivery?.by, deliveredOn: cancelled || pending ? undefined : deliveredOn, cancelledAt: cancelled ? at : undefined, cancelledById: cancelled ? distributorUser : undefined, cancelReason: cancelled ? cancelReason.get(draft.number) ?? "Cancelled" : undefined, currency: "USD", ...audit(distributorUser, at) };
+    const order: Order = { id: createUuidV7(), hubId, distributorId, number: (orderNumber += 1), reference: draft.number, customerId: customer.id, orderedOn: draft.date, category: draft.category, channel: draft.channel, status: cancelled ? "CANCELLED" : pending ? "PENDING" : "DELIVERED", discountBasisPoints: Math.min(10_000, Math.max(0, draft.discount)), deliveredBy: cancelled || pending ? undefined : delivery?.by, deliveredOn: cancelled || pending ? undefined : deliveredOn, cancelledAt: cancelled ? at : undefined, cancelledById: cancelled ? distributorUser : undefined, cancelReason: cancelled ? cancelReason.get(draft.number) ?? "Cancelled" : undefined, currency: "USD", ...audit(distributorUser, at) };
     const orderSales = draft.lines.map((line): Sale => {
       const discountMinor = Math.max(0, Math.min(line.valueMinor, line.valueMinor - line.paymentMinor));
-      return { id: createUuidV7(), hubId, distributorId: seedIds.distributor, customerId: customer.id, productId: productFor(line.sku), batchId: batchFor.get(line.sku)!.id, quantity: String(line.quantity), unitPriceMinor: line.priceMinor, amountMinor: line.valueMinor, discountMinor: discountMinor || undefined, currency: "USD", soldAt: at, orderId: order.id, ...(cancelled ? { voidedAt: at, voidedById: distributorUser, voidReason: `Order cancelled: ${order.cancelReason}` } : {}), ...audit(distributorUser, at) };
+      return { id: createUuidV7(), hubId, distributorId, customerId: customer.id, productId: productFor(line.sku), batchId: batchFor.get(line.sku)!.id, quantity: String(line.quantity), unitPriceMinor: line.priceMinor, amountMinor: line.valueMinor, discountMinor: discountMinor || undefined, currency: "USD", soldAt: at, orderId: order.id, ...(cancelled ? { voidedAt: at, voidedById: distributorUser, voidReason: `Order cancelled: ${order.cancelReason}` } : {}), ...audit(distributorUser, at) };
     });
     orderRecords.push(order);
     orderByReference.set(draft.number, order);
@@ -204,7 +218,7 @@ export async function importSalesHistory(tabs: string[][][], now = new Date()): 
     // Free samples with nothing paid are not invoiced.
     if (totalMinor === 0 || (order.category === "SAMPLE" && paid.length === 0)) continue;
     const issuedAt = noon(order.deliveredOn ?? order.orderedOn);
-    const invoice: Invoice = { id: createUuidV7(), hubId, distributorId: seedIds.distributor, number: (invoiceNumber += 1), customerId: order.customerId, saleIds: orderSales.map((sale) => sale.id), totalMinor, currency: "USD", issuedAt, dueDate: issuedAt.slice(0, 10), ...audit(distributorUser, issuedAt) };
+    const invoice: Invoice = { id: createUuidV7(), hubId, distributorId, number: (invoiceNumber += 1), customerId: order.customerId, saleIds: orderSales.map((sale) => sale.id), totalMinor, currency: "USD", issuedAt, dueDate: issuedAt.slice(0, 10), ...audit(distributorUser, issuedAt) };
     invoices.push(invoice);
     for (const sale of orderSales) sale.invoiceId = invoice.id;
     let outstanding = totalMinor;
@@ -243,5 +257,5 @@ export async function importSalesHistory(tabs: string[][][], now = new Date()): 
   await repository.putMany("Invoice", invoices);
   await repository.putMany("Collection", collections);
 
-  return { orders: orderRecords.length, lines: sales.length, customers: customers.size, invoices: invoices.length, collections: collections.length, cancelled: orderRecords.filter((order) => order.status === "CANCELLED").length, skus: skuNames, rates: rates.length, firstDate, lastDate: orders[orders.length - 1].date, skipped };
+  return { alreadyImported: allOrders.length - orders.length, orders: orderRecords.length, lines: sales.length, customers: customers.size, invoices: invoices.length, collections: collections.length, cancelled: orderRecords.filter((order) => order.status === "CANCELLED").length, skus: skuNames, rates: rates.length, firstDate, lastDate: orders[orders.length - 1]?.date ?? "", skipped };
 }

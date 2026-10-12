@@ -121,11 +121,11 @@ After login, route each user to their role's dashboard. Hub admins of hubs still
 - All user-facing text goes through translation files. English first; structure must allow French and other languages without code changes.
 - Validate phone numbers against the country's format.
 
-## Data layer (temporary: localStorage)
+## Data layer
 
-Kinja is a production project. Data lives in localStorage only until the real database is chosen, so build the data layer so it can be swapped without touching services or UI.
+Kinja is a production project. **Production data lives in Postgres on Neon** (`DATABASE_URL`). In development, without `DATABASE_URL`, the server stores data in a JSON file under `.data/` through the same localStorage-style adapter. Services and UI never know which store they use.
 
-- All reads and writes go through typed repository interfaces (e.g. `FarmerRepository`, `DeliveryRepository`) in `src/data/`. The only implementation for now is a localStorage adapter. A database or API adapter will replace it later.
+- All reads and writes go through the `Repository` interface (`src/repositories/`). Implementations: `PostgresRepository` (production; one `kinja_records` table of validated JSON keyed by collection and id, plain SQL through `postgres.js`, no ORM) and `LocalStorageRepository` (development file store; tests use it in memory). `src/repositories/server.ts` picks one; production refuses to start without `DATABASE_URL`.
 - Nothing outside the adapter touches `localStorage` directly.
 - Keys are namespaced and versioned: `kinja:v1:<collection>`. Store a schema version and write a migration function whenever the stored shape changes.
 - Validate every record with Zod on write and on read, so corrupted or outdated data fails loudly.
@@ -168,7 +168,7 @@ Partner settlement, accounting integrations, lender and investor role, multiple 
 ## Tech stack
 
 - Next.js (App Router) with TypeScript in strict mode
-- Data layer: typed repository interfaces with a localStorage adapter for now (see Data layer). The production database is not chosen yet: do not add Prisma, any ORM, or any database client.
+- Data layer: typed repository interfaces; Postgres on Neon in production through `postgres.js` (no ORM), a local JSON file in development (see Data layer).
 - Auth: custom session handling through an auth service and repository (no Auth.js until the backend exists)
 - Tailwind CSS and shadcn/ui
 - Zod for validating every input on the server
@@ -188,6 +188,7 @@ The app is mobile-first. Cooperative and field staff screens are used on low-end
 - `pnpm exec tsc --noEmit`: type-check
 - `pnpm test:e2e`: end-to-end tests (Playwright, not set up yet)
 - Seed and reset local data from the dev tools panel at `/dev` (development builds only)
+- Import real sales history into production with `pnpm import:sheet --sheet "<link>" --hub "<hub name>"` (add `--yes` to write). It reads `DATABASE_URL` from `.env.production.local`, imports into an existing verified hub, creates no user accounts, and only adds orders not already there. Dev tools (`/dev`) are disabled whenever `DATABASE_URL` is set, so they can never wipe the real database.
 - Import a hub's real sales history from its order spreadsheet (Google Sheet shared by link) at `/dev`, "Import sales history". It replaces the data with the base demo plus every order, customer, payment and exchange rate from the sheet; imported orders keep their own numbers (e.g. JSK0001) as `reference`. The sheet is fetched at import time and cached in `.data/import` (git-ignored), so real customer data never enters the repo.
 
 ## Conventions
