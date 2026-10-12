@@ -37,6 +37,13 @@ describe("uploads in object storage", () => {
     expect(farmer.photoUrl).toMatch(/^\/files\/farmers\/.+\.png$/);
   });
 
+  it("keeps the file inline instead of failing when the bucket rejects it", async () => {
+    setObjectStoreForTesting({ put: async () => { throw new Error("NoSuchBucket"); }, signedUrl: async () => "" });
+    const errors = console.error;
+    console.error = () => {};
+    try { expect(await storeUpload(png, "users")).toBe(png); } finally { console.error = errors; }
+  });
+
   it("keeps the data URL when no bucket is configured (local development)", async () => {
     setObjectStoreForTesting(null);
     expect(await storeUpload(png, "users")).toBe(png);

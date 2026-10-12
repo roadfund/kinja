@@ -15,6 +15,13 @@ export async function storeUpload(value: string | undefined, folder: UploadFolde
   const match = /^data:([^;,]+);base64,([\s\S]*)$/.exec(value);
   if (!match || !types[match[1]]) throw new Error("Upload a JPEG, PNG or WebP image, or a PDF");
   const key = `${folder}/${createUuidV7()}.${types[match[1]]}`;
-  await store.put(key, Uint8Array.from(Buffer.from(match[2], "base64")), match[1]);
+  try {
+    await store.put(key, Uint8Array.from(Buffer.from(match[2], "base64")), match[1]);
+  } catch (error) {
+    // A storage problem (wrong bucket, outage) must never block signup or onboarding:
+    // keep the file inline, as without a bucket, and log it so it can be fixed.
+    console.error(`File storage failed; kept the ${folder} upload inline.`, error);
+    return value;
+  }
   return `/files/${key}`;
 }
