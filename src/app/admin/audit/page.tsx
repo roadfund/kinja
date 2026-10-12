@@ -10,7 +10,7 @@ export default async function AuditLogPage() {
     {entries.length === 0 ? <EmptyState description="Moderation actions and voids will be listed here." icon={<ScrollText size={22} aria-hidden="true" />} title="Nothing logged yet" /> :
       <DataTable rowKey={(entry) => entry.id} rows={entries} columns={[
         { header: "When", cell: (entry) => new Date(entry.createdAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) },
-        { header: "Action", cell: (entry) => <Badge tone={entry.action === "REINSTATE" ? "green" : entry.action === "VOID" || entry.action === "CANCEL" ? "grey" : entry.action === "SET_RATE" || entry.action === "SET_CURRENCIES" ? "neutral" : "red"}>{entry.action.charAt(0) + entry.action.slice(1).toLowerCase().replace(/_/g, " ")}</Badge> },
+        { header: "Action", cell: (entry) => <Badge tone={entry.action === "REINSTATE" || entry.action === "ADD_CROP" || entry.action === "RESTORE_CROP" ? "green" : entry.action === "ARCHIVE_CROP" ? "grey" : entry.action === "VOID" || entry.action === "CANCEL" ? "grey" : entry.action === "SET_RATE" || entry.action === "SET_CURRENCIES" ? "neutral" : "red"}>{entry.action.charAt(0) + entry.action.slice(1).toLowerCase().replace(/_/g, " ")}</Badge> },
         { header: "Record", cell: (entry) => entry.entity },
         { header: "Hub", cell: (entry) => entry.hubName ?? "—" },
         { header: "By", cell: (entry) => entry.actorName },

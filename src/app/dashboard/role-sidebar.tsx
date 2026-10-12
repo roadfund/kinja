@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { ArrowLeftRight, BarChart3, Boxes, ClipboardList, FileCheck2, FileText, Factory, LayoutDashboard, Leaf, LogOut, Package, ReceiptText, RefreshCw, ScrollText, ShieldAlert, ShoppingCart, Truck, UserCircle2, UserPlus, UsersRound, WalletCards } from "lucide-react";
+import { ArrowLeftRight, BarChart3, Sprout, Boxes, ClipboardList, FileCheck2, FileText, Factory, LayoutDashboard, Leaf, LogOut, Package, ReceiptText, RefreshCw, ScrollText, ShieldAlert, ShoppingCart, Truck, UserCircle2, UserPlus, UsersRound, WalletCards } from "lucide-react";
 import type { Account } from "@/auth/server-store";
 import { FieldSyncStatus } from "@/components/field/field-sync-status";
 import { ProfileLink, SidebarNav, type NavItem } from "@/components/kinja/sidebar-nav";
 import { SidebarUserCard } from "./sidebar-user-card";
 
 const navigation: Record<string, Array<{ label: string; href: string; icon: typeof Leaf }>> = {
-  TECH_ADMIN: [{ label: "Hub review", href: "/admin/hubs", icon: FileCheck2 }, { label: "Moderation", href: "/admin/moderation", icon: ShieldAlert }, { label: "Reports", href: "/admin/ops", icon: BarChart3 }, { label: "Currencies", href: "/admin/currencies", icon: ArrowLeftRight }, { label: "Audit log", href: "/admin/audit", icon: ScrollText }],
+  TECH_ADMIN: [{ label: "Hub review", href: "/admin/hubs", icon: FileCheck2 }, { label: "Moderation", href: "/admin/moderation", icon: ShieldAlert }, { label: "Reports", href: "/admin/ops", icon: BarChart3 }, { label: "Currencies", href: "/admin/currencies", icon: ArrowLeftRight }, { label: "Crop list", href: "/admin/master-crops", icon: Sprout }, { label: "Audit log", href: "/admin/audit", icon: ScrollText }],
   COOP_LEAD: [{ label: "Farmers", href: "/dashboard/cooperative/farmers", icon: UsersRound }, { label: "Deliveries", href: "/dashboard/cooperative/deliveries", icon: ClipboardList }, { label: "Crops", href: "/dashboard/cooperative/crops", icon: Leaf }, { label: "Transfers", href: "/dashboard/cooperative/transfers", icon: Truck }, { label: "Payouts", href: "/dashboard/cooperative?module=payouts", icon: WalletCards }, { label: "Team", href: "/dashboard/cooperative/team", icon: UserPlus }, { label: "Sync status", href: "/dashboard/cooperative/sync", icon: RefreshCw }],
   FIELD_STAFF: [{ label: "Farmers", href: "/dashboard/cooperative/farmers", icon: UsersRound }, { label: "Deliveries", href: "/dashboard/cooperative/deliveries", icon: ClipboardList }, { label: "Crops", href: "/dashboard/cooperative/crops", icon: Leaf }, { label: "Sync status", href: "/dashboard/cooperative/sync", icon: RefreshCw }],
   MANUFACTURER: [{ label: "Transfers", href: "/dashboard/manufacturer/transfers", icon: Truck }, { label: "Batches", href: "/dashboard/manufacturer/batches", icon: Factory }],

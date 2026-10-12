@@ -154,7 +154,7 @@ Kinja is a production project. **Production data lives in Postgres on Neon** (`D
 - **Invoice and receipt PDFs**: the distributor and hub admin can download a designed invoice for any invoice, and a receipt (`RCT-` + invoice number) once at least one payment is recorded, from the "⋯" menu on sales and invoices or the invoice page. Each shows the amounts in the invoice currency and their equivalent in the other accepted currencies.
 - **Invoices**: numbered sequentially per hub. Statuses `ISSUED`, `PARTIALLY_PAID`, `PAID`, `OVERDUE`, `VOID`. Overdue is computed from the due date.
 - **Audit**: every record stores `createdById`, `createdAt`, `updatedAt`. Corrections and voids store who, when and a reason. Never hard-delete deliveries, payouts, transfers, batches, sales, invoices or collections.
-- **Crops**: a master list owned by the tech admin; each hub enables a subset. No free-text crop names.
+- **Crops**: a master list owned by the tech admin (Platform settings → Crop list: add, archive, restore; never deleted); each hub enables a subset and sets its own grades and prices in hub setup. No free-text crop names.
 - **Passwords**: never store plain text. Hash with PBKDF2 through Web Crypto for now; switch to argon2 when the backend exists. Rate-limit login, invite acceptance and reset attempts.
 
 ## Data model (MVP)
