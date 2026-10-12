@@ -69,3 +69,23 @@ export async function saveCropSetup(account: Account, input: unknown, now = new 
   await repository.put("HubCrop", hubCrop);
   return hubCrop;
 }
+
+export type CropSaveResult = { cropId: string; grades?: HubCrop["grades"]; enabled?: boolean; error?: string };
+
+// Saves several crops in one go (the whole crops page has one Save). Each crop goes through
+// the same checks as alone; one crop's problem is reported against it and the others still save.
+export async function saveCropSetups(account: Account, input: unknown, now = new Date()): Promise<CropSaveResult[]> {
+  requireRole(account, ["HUB_ADMIN"]);
+  const { crops } = z.object({ crops: z.array(z.unknown()).min(1).max(100) }).parse(input);
+  const results: CropSaveResult[] = [];
+  for (const crop of crops) {
+    const cropId = typeof crop === "object" && crop && "cropId" in crop ? String((crop as { cropId: unknown }).cropId) : "";
+    try {
+      const saved = await saveCropSetup(account, crop, now);
+      results.push({ cropId: saved.cropId, grades: saved.grades, enabled: saved.enabled });
+    } catch (error) {
+      results.push({ cropId, error: error instanceof z.ZodError ? "Check every grade has a name and a price" : error instanceof Error ? error.message : "Could not save" });
+    }
+  }
+  return results;
+}

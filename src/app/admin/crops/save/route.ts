@@ -1,10 +1,10 @@
-import { saveCropSetup } from "@/admin/hub-crop-setup";
+import { saveCropSetups } from "@/admin/hub-crop-setup";
 import { apiErrorResponse, requireApiAccount } from "@/auth/route-authorization";
 
+// Saves every changed crop on the crops page in one request.
 export async function POST(request: Request) {
   try {
-    const hubCrop = await saveCropSetup(await requireApiAccount(), await request.json());
-    return Response.json({ id: hubCrop.id, grades: hubCrop.grades });
+    return Response.json({ results: await saveCropSetups(await requireApiAccount(), await request.json()) });
   } catch (error) {
     return apiErrorResponse(error);
   }
