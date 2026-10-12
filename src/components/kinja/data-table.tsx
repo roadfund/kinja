@@ -1,4 +1,3 @@
-import "server-only";
 import { headers } from "next/headers";
 import { bodyCell, headCell, tableClass, tableFrame } from "@/components/kinja/table-styles";
 import { TablePager } from "@/components/kinja/table-pager";
