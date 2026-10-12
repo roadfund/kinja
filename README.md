@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kinja
 
-## Getting Started
+The Operating System for Africa's Agricultural Value Chains.
 
-First, run the development server:
+## Commands
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install       # install dependencies
+pnpm dev           # start the dev server at http://localhost:3000
+pnpm test          # run the test suite once (Vitest)
+pnpm test:watch    # run tests on every change
+pnpm lint          # ESLint
+pnpm exec tsc --noEmit   # type-check
+pnpm build         # production build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Local setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Copy `.env.example` to `.env.local` and fill in usernames and passwords.
+2. Run `pnpm dev` and open http://localhost:3000.
+3. On a fresh checkout, demo data loads automatically the first time the login page opens.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Dev tools
 
-## Learn More
+Open http://localhost:3000/dev (development builds only) to:
 
-To learn more about Next.js, take a look at the following resources:
+- load demo data or clear everything,
+- sign in as any account without a password (one per role, plus a hub admin whose hub is still pending),
+- read the email outbox, where every email Kinja "sends" is recorded (password resets, invites).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Demo accounts use the usernames and passwords in `.env.local`. When a value is unset, the username falls back to the role name (e.g. `cooplead`) and the password to `kinja-dev-password`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Data
 
-## Deploy on Vercel
+There is no database yet. The server stores data through the `Repository` interface
+(`src/repositories/repository.ts`) using the localStorage adapter on top of a JSON file at
+`.data/kinja.json` (git-ignored). To switch to a real database, implement `Repository` and return it
+from `getRepository()` in `src/repositories/server.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Routes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Area | Routes |
+| --- | --- |
+| Auth | `/auth/login`, `/auth/signup`, `/auth/onboarding`, `/auth/pending`, `/auth/invite/[code]`, `/auth/reset-password`, `/auth/logout` |
+| Dashboards | `/dashboard/admin`, `/dashboard/hub`, `/dashboard/cooperative`, `/dashboard/manufacturer`, `/dashboard/distributor`, `/dashboard/profile` |
+| Kinja Field | `/dashboard/cooperative/farmers`, `/dashboard/cooperative/farmers/new`, `/dashboard/cooperative/deliveries`, `/dashboard/cooperative/deliveries/new` |
+| Hub setup | `/admin/setup`, `/admin/crops`, `/admin/team`, `/admin/hubs` |
+| Development | `/dev` |

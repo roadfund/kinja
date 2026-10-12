@@ -1,0 +1,21 @@
+import Link from "next/link";
+import { ArrowLeftRight, BarChart3, Boxes, ClipboardList, FileCheck2, FileText, Factory, LayoutDashboard, Leaf, LogOut, Package, ReceiptText, RefreshCw, ScrollText, ShieldAlert, ShoppingCart, Truck, UserCircle2, UserPlus, UsersRound, WalletCards } from "lucide-react";
+import type { Account } from "@/auth/server-store";
+import { FieldSyncStatus } from "@/components/field/field-sync-status";
+import { ProfileLink, SidebarNav, type NavItem } from "@/components/kinja/sidebar-nav";
+import { SidebarUserCard } from "./sidebar-user-card";
+
+const navigation: Record<string, Array<{ label: string; href: string; icon: typeof Leaf }>> = {
+  TECH_ADMIN: [{ label: "Hub review", href: "/admin/hubs", icon: FileCheck2 }, { label: "Moderation", href: "/admin/moderation", icon: ShieldAlert }, { label: "Reports", href: "/admin/ops", icon: BarChart3 }, { label: "Currencies", href: "/admin/currencies", icon: ArrowLeftRight }, { label: "Audit log", href: "/admin/audit", icon: ScrollText }],
+  COOP_LEAD: [{ label: "Farmers", href: "/dashboard/cooperative/farmers", icon: UsersRound }, { label: "Deliveries", href: "/dashboard/cooperative/deliveries", icon: ClipboardList }, { label: "Crops", href: "/dashboard/cooperative/crops", icon: Leaf }, { label: "Transfers", href: "/dashboard/cooperative/transfers", icon: Truck }, { label: "Payouts", href: "/dashboard/cooperative?module=payouts", icon: WalletCards }, { label: "Team", href: "/dashboard/cooperative/team", icon: UserPlus }, { label: "Sync status", href: "/dashboard/cooperative/sync", icon: RefreshCw }],
+  FIELD_STAFF: [{ label: "Farmers", href: "/dashboard/cooperative/farmers", icon: UsersRound }, { label: "Deliveries", href: "/dashboard/cooperative/deliveries", icon: ClipboardList }, { label: "Crops", href: "/dashboard/cooperative/crops", icon: Leaf }, { label: "Sync status", href: "/dashboard/cooperative/sync", icon: RefreshCw }],
+  MANUFACTURER: [{ label: "Transfers", href: "/dashboard/manufacturer/transfers", icon: Truck }, { label: "Batches", href: "/dashboard/manufacturer/batches", icon: Factory }],
+  DISTRIBUTOR: [{ label: "Orders", href: "/dashboard/distributor/orders", icon: ReceiptText }, { label: "SKUs", href: "/dashboard/distributor/skus", icon: Package }, { label: "Stock", href: "/dashboard/distributor/stock", icon: Boxes }, { label: "Customers", href: "/dashboard/distributor/customers", icon: UsersRound }, { label: "Sales", href: "/dashboard/distributor/sales", icon: ShoppingCart }, { label: "Invoices", href: "/dashboard/distributor/invoices", icon: FileText }, { label: "Collections", href: "/dashboard/distributor/collections", icon: WalletCards }],
+};
+
+export function RoleSidebar({ account }: { account: Account }) {
+  const role = account.membership!.role;
+  const overview = `/dashboard/${role === "TECH_ADMIN" ? "admin" : role === "COOP_LEAD" || role === "FIELD_STAFF" ? "cooperative" : role.toLowerCase()}`;
+  const items: NavItem[] = [{ label: "Overview", href: overview, icon: <LayoutDashboard size={17} aria-hidden="true" /> }, ...(navigation[role] ?? []).map((item) => { const Icon = item.icon; return { label: item.label, href: item.href, icon: <Icon size={17} aria-hidden="true" /> }; })];
+  return <aside className="border-b border-[#dce2d9] bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-b-0 lg:border-r"><div className="px-6 py-5 lg:px-5"><Link className="flex items-center gap-2 text-xl font-bold tracking-tight text-[var(--kinja-green)]" href="/"><Leaf aria-hidden="true" size={20} strokeWidth={2.5} />kinja<span className="text-[var(--kinja-yellow)]">.</span></Link></div><SidebarUserCard account={account} />{(role === "COOP_LEAD" || role === "FIELD_STAFF") && <FieldSyncStatus userId={account.user.id} />}<SidebarNav items={items} label="Dashboard navigation" /><div className="flex items-center justify-between border-t border-[#eef1eb] px-4 py-4 lg:block lg:px-6"><ProfileLink icon={<UserCircle2 size={17} aria-hidden="true" />} /><Link className="mt-3 flex items-center gap-2 text-sm font-semibold text-[#718074] lg:mt-4" href="/auth/logout" prefetch={false}><LogOut aria-hidden="true" size={14} />Sign out</Link></div></aside>;
+}
