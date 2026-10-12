@@ -69,14 +69,17 @@ export async function loadAccount(userId: string): Promise<Account | null> {
 export async function createSession(userId: string, now = new Date()): Promise<string> {
   const token = createToken();
   const timestamp = now.toISOString();
-  await getRepository().put("Session", { id: createUuidV7(), tokenHash: await hashToken(token), userId, expiresAt: new Date(now.getTime() + SESSION_TTL_MS).toISOString(), createdById: userId, createdAt: timestamp, updatedAt: timestamp });
+  // The session's id is its token hash, so each request finds it with one direct lookup.
+  const tokenHash = await hashToken(token);
+  await getRepository().put("Session", { id: tokenHash, tokenHash, userId, expiresAt: new Date(now.getTime() + SESSION_TTL_MS).toISOString(), createdById: userId, createdAt: timestamp, updatedAt: timestamp });
   return token;
 }
 
 export async function getAccountFromSession(sessionToken: string | undefined, now = new Date()): Promise<Account | null> {
   if (!sessionToken) return null;
   const tokenHash = await hashToken(sessionToken);
-  const session = (await getRepository().list("Session")).find((item) => item.tokenHash === tokenHash);
+  // Direct lookup; sessions created before ids were token hashes are still found by a scan.
+  const session = (await getRepository().get("Session", tokenHash)) ?? (await getRepository().list("Session")).find((item) => item.tokenHash === tokenHash);
   if (!session || new Date(session.expiresAt) <= now) return null;
   return loadAccount(session.userId);
 }
