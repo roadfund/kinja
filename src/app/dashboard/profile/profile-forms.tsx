@@ -7,7 +7,7 @@ import { FormCard, FormFooter, inputClass, Label } from "@/components/kinja/form
 import { useJsonAction } from "@/components/kinja/use-json-action";
 import { PhotoField } from "@/components/photo-field";
 
-export function ProfileForm({ profile }: { profile: { fullName: string; username: string; phone: string; email?: string; photoUrl?: string } }) {
+export function ProfileForm({ profile }: { profile: { fullName: string; username: string; phone?: string; email?: string; photoUrl?: string } }) {
   const router = useRouter();
   const { run, pending, error } = useJsonAction();
   const [photoUrl, setPhotoUrl] = useState(profile.photoUrl ?? "");

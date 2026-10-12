@@ -103,10 +103,10 @@ async function ensureTechAdmin(username: string, password: string): Promise<void
   const { TECH_ADMIN_USERNAME, TECH_ADMIN_PASSWORD } = process.env;
   if (!TECH_ADMIN_USERNAME || !TECH_ADMIN_PASSWORD || username !== TECH_ADMIN_USERNAME || password !== TECH_ADMIN_PASSWORD) return;
   if (await findUserByUsername(username)) return;
-  await createUserWithMembership({ id: "tech-admin", fullName: "Kinja Tech Admin", username, phone: "", password, role: "TECH_ADMIN", hubId: PLATFORM_HUB_ID });
+  await createUserWithMembership({ id: "tech-admin", fullName: "Kinja Tech Admin", username, phone: process.env.TECH_ADMIN_PHONE || undefined, password, role: "TECH_ADMIN", hubId: PLATFORM_HUB_ID });
 }
 
-export async function createUserWithMembership(input: { id?: string; fullName: string; username: string; phone: string; email?: string; photoUrl?: string; password: string; role: Membership["role"]; hubId: string; organizationId?: string }, now = new Date()): Promise<User> {
+export async function createUserWithMembership(input: { id?: string; fullName: string; username: string; phone?: string; email?: string; photoUrl?: string; password: string; role: Membership["role"]; hubId: string; organizationId?: string }, now = new Date()): Promise<User> {
   const timestamp = now.toISOString();
   const passwordHash = await hashPassword(input.password);
   const user: User = { id: input.id ?? createUuidV7(), fullName: input.fullName, username: input.username, phone: input.phone, email: input.email, photoUrl: input.photoUrl, passwordHash, passwordSalt: passwordHash.split(".")[0], createdById: "system", createdAt: timestamp, updatedAt: timestamp };

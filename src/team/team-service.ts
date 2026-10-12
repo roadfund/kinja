@@ -23,7 +23,7 @@ export function invitableRoles(role: Role): Role[] {
   return [];
 }
 
-export type TeamMember = { membershipId: string; userId: string; fullName: string; username: string; email?: string; phone: string; photoUrl?: string; role: Role; organizationName?: string; joinedAt: string; isSelf: boolean; canRemove: boolean };
+export type TeamMember = { membershipId: string; userId: string; fullName: string; username: string; email?: string; phone?: string; photoUrl?: string; role: Role; organizationName?: string; joinedAt: string; isSelf: boolean; canRemove: boolean };
 export type TeamInvite = { id: string; code: string; role: Role; organizationName?: string; isNewOrganization: boolean; email?: string; invitedByName: string; uses: number; maxUses: number; createdAt: string; expiresAt: string; status: InviteStatus };
 export type TeamView = { scope: Scope; hubName: string; hubVerified: boolean; members: TeamMember[]; invites: TeamInvite[]; organizations: Array<Pick<Organization, "id" | "name" | "type">> };
 

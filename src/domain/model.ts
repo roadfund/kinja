@@ -141,7 +141,8 @@ export const User = z.object({
   id: z.string().min(1),
   fullName: z.string().min(1),
   username: z.string().min(3),
-  phone: z.string().min(1),
+  // Required at signup (see auth/signup.ts); only system accounts such as the tech admin have none.
+  phone: z.string().min(1).optional(),
   email: z.string().email().optional(),
   photoUrl: z.string().startsWith("data:image/").max(300_000).optional(),
   passwordHash: z.string().min(1),
