@@ -1,5 +1,6 @@
 import { Truck } from "lucide-react";
-import { Badge, DataTable, EmptyState, formatDate } from "@/components/kinja/ui";
+import { Badge, EmptyState, formatDate } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { formatQuantity, toThousandths } from "@/domain/money";
 import type { TransferRow } from "@/manufacture/manufacture-service";
 import { ReceiveTransferButton } from "./receive-transfer-button";

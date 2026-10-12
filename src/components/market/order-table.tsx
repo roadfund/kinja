@@ -1,4 +1,5 @@
-import { Badge, DataTable, formatDate, type BadgeTone, type Column } from "@/components/kinja/ui";
+import { Badge, formatDate, type BadgeTone, type Column } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { moneyColumns } from "@/components/kinja/money";
 import { OrderActions } from "@/components/market/order-actions";
 import { moneyItem, type MoneyContext } from "@/domain/currency";

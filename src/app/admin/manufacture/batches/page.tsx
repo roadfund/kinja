@@ -1,6 +1,7 @@
 import { Factory } from "lucide-react";
 import { requireDashboardRole } from "@/auth/route-authorization";
-import { Badge, DashboardShell, DataTable, EmptyState, formatDate, SummaryCard, SummaryGrid } from "@/components/kinja/ui";
+import { Badge, DashboardShell, EmptyState, formatDate, SummaryCard, SummaryGrid } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { ExportLinks } from "@/components/ops/export-links";
 import { formatQuantity, toThousandths } from "@/domain/money";
 import { listBatches, listTransfers, yieldPercent } from "@/manufacture/manufacture-service";

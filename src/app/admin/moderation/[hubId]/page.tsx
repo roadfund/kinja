@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireDashboardRole } from "@/auth/route-authorization";
-import { Badge, DashboardShell, DataTable, formatDate, SectionHeader, type Column } from "@/components/kinja/ui";
+import { Badge, DashboardShell, formatDate, SectionHeader, type Column } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { ReasonAction } from "@/components/ops/reason-action";
 import { getMoneyContext } from "@/admin/exchange-rates";
 import { moneyColumns } from "@/components/kinja/money";

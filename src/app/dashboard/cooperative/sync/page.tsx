@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireCooperativeMember } from "@/auth/route-authorization";
-import { DataTable, formatDate, SectionHeader } from "@/components/kinja/ui";
+import { formatDate, SectionHeader } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { DismissDuplicateButton } from "@/components/field/dismiss-duplicate-button";
 import { SyncQueue } from "@/components/field/sync-queue";
 import { listFarmers } from "@/field/farmers";

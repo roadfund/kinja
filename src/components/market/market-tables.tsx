@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Badge, DataTable, formatDate, type BadgeTone } from "@/components/kinja/ui";
+import { Badge, formatDate, type BadgeTone } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import type { InvoiceStatus } from "@/domain/model";
 import { moneyColumns } from "@/components/kinja/money";
 import { DocumentMenu } from "@/components/market/document-menu";

@@ -1,9 +1,11 @@
-import { Plus, UsersRound } from "lucide-react";
+import { Lock, Plus, Sprout, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { requireCooperativeMember } from "@/auth/route-authorization";
+import { listHubCropOptions } from "@/field/deliveries";
 import { listFarmers, type Farmer } from "@/field/farmers";
 import { Avatar } from "@/components/avatar";
-import { Badge, DataTable, formatDate } from "@/components/kinja/ui";
+import { Badge, formatDate } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { ExportLinks } from "@/components/ops/export-links";
 import { QueuedRecords } from "@/components/field/queued-records";
 import { CooperativeShell } from "../cooperative-shell";
@@ -30,11 +32,16 @@ function SummaryCard({ label, value, detail }: { label: string; value: string; d
   return <div className="rounded-2xl bg-white p-5"><p className="text-sm text-[#718074]">{label}</p><p className="mt-2 text-3xl font-semibold text-[var(--kinja-green)]">{value}</p><p className="mt-1 text-sm text-[#5d685e]">{detail}</p></div>;
 }
 
-const addFarmerButton = <Link className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-[var(--kinja-green)] px-5 font-semibold text-white" href="/dashboard/cooperative/farmers/new"><Plus size={17} aria-hidden="true" />Register farmer</Link>;
+const addFarmerLink = <Link className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-[var(--kinja-green)] px-5 font-semibold text-white" href="/dashboard/cooperative/farmers/new"><Plus size={17} aria-hidden="true" />Register farmer</Link>;
+// Farmers name the crops they grow, so registering needs the hub's crops set up first.
+const addFarmerLocked = <span aria-disabled="true" className="inline-flex h-12 shrink-0 cursor-not-allowed items-center gap-2 rounded-xl bg-[#eef1eb] px-5 font-semibold text-[#9aa69c]" title="Crops need to be set up first"><Lock size={16} aria-hidden="true" />Register farmer</span>;
 
 export default async function FarmersPage() {
   const { scope, user } = await requireCooperativeMember();
-  const farmers = (await listFarmers(scope.hubId, scope.organizationId)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const [allFarmers, crops] = await Promise.all([listFarmers(scope.hubId, scope.organizationId), listHubCropOptions(scope.hubId)]);
+  const farmers = allFarmers.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const cropsReady = crops.length > 0;
+  const addFarmerButton = cropsReady ? addFarmerLink : addFarmerLocked;
   const women = farmers.filter((farmer) => farmer.gender === "FEMALE").length;
   const men = farmers.filter((farmer) => farmer.gender === "MALE").length;
   const topCrop = mostGrownCrop(farmers);
@@ -43,6 +50,7 @@ export default async function FarmersPage() {
   const newThisMonth = farmers.filter((farmer) => farmer.createdAt.startsWith(thisMonth)).length;
 
   return <CooperativeShell actions={<ExportLinks datasets={["farmers"]} />} eyebrow="Kinja Field" title="Farmers" description="Everyone registered with your cooperative, with their crops and farm plots.">
+    {!cropsReady && <div className="mb-6 flex gap-3 rounded-2xl border border-[#e4d9aa] bg-[#fff9e8] p-5" role="status"><Sprout className="mt-0.5 shrink-0 text-[#b88a20]" size={20} aria-hidden="true" /><div><p className="font-semibold text-[var(--kinja-green)]">Set up crops before registering farmers</p><p className="mt-1 max-w-2xl text-sm leading-6 text-[#6d6243]">Farmers are registered with the crops they grow, and deliveries are priced by crop and grade. Your hub admin switches on your hub&apos;s crops and sets their grades and prices in <span className="font-semibold">Hub setup → Crops</span>. Registering opens as soon as one crop is set up.</p></div></div>}
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <SummaryCard label="Farmers" value={String(farmers.length)} detail={`${newThisMonth} registered this month`} />
       <SummaryCard label="Women farmers" value={String(women)} detail={share(women, farmers.length)} />

@@ -1,6 +1,5 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { TablePager } from "@/components/kinja/table-pager";
 import { cn } from "@/lib/utils";
 
 // The content of every dashboard page: a back link, a heading, optional header actions and
@@ -52,23 +51,6 @@ export function Badge({ tone, children }: { tone: BadgeTone; children: React.Rea
 export type Column<T> = { header: string; cell: (row: T) => React.ReactNode; align?: "right"; className?: string };
 
 export { bodyCell, headCell, tableClass, tableFrame } from "@/components/kinja/table-styles";
-import { bodyCell, headCell, tableClass, tableFrame } from "@/components/kinja/table-styles";
-
-// The visible text inside rendered cells, for table search (badges and links included).
-function nodeText(node: React.ReactNode): string {
-  if (node === null || node === undefined || typeof node === "boolean") return "";
-  if (typeof node === "string" || typeof node === "number") return String(node);
-  if (Array.isArray(node)) return node.map(nodeText).join(" ");
-  if (typeof node === "object" && "props" in node) return nodeText((node.props as { children?: React.ReactNode }).children);
-  return "";
-}
-
-export function DataTable<T>({ columns, rows, rowKey, muted, pageSize }: { columns: Array<Column<T>>; rows: T[]; rowKey: (row: T) => string; muted?: (row: T) => boolean; pageSize?: number }) {
-  const head = <tr>{columns.map((column, index) => <th className={cn(headCell, column.align === "right" && "text-right")} key={`${column.header}-${index}`} scope="col">{column.header}</th>)}</tr>;
-  const body = rows.map((row) => <tr className={cn("group", muted?.(row) && "[&>td]:text-[#a4aea5]")} key={rowKey(row)}>{columns.map((column, index) => <td className={cn(bodyCell, column.align === "right" && "text-right tabular-nums", column.className)} key={`${column.header}-${index}`}>{column.cell(row)}</td>)}</tr>);
-  const search = rows.map((row) => columns.map((column) => nodeText(column.cell(row))).join(" ").toLowerCase());
-  return <TablePager frameClass={tableFrame} head={head} pageSize={pageSize} rows={body} search={search} tableClass={tableClass} />;
-}
 
 export const formatDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 

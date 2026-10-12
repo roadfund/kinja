@@ -1,5 +1,6 @@
 import { Plus, Store } from "lucide-react";
-import { Badge, DataTable, EmptyState, LinkButton } from "@/components/kinja/ui";
+import { Badge, EmptyState, LinkButton } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import type { Customer } from "@/domain/model";
 import { CustomerActions } from "./customer-actions";
 

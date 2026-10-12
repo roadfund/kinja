@@ -1,7 +1,8 @@
 import { Boxes } from "lucide-react";
 import { ExportLinks } from "@/components/ops/export-links";
 import { requireOrganizationMember } from "@/auth/route-authorization";
-import { DashboardShell, DataTable, EmptyState, SectionHeader, SummaryCard, SummaryGrid } from "@/components/kinja/ui";
+import { DashboardShell, EmptyState, SectionHeader, SummaryCard, SummaryGrid } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { TransferTable, transferSummary } from "@/components/manufacture/transfer-table";
 import { formatQuantity } from "@/domain/money";
 import { listTransfers } from "@/manufacture/manufacture-service";

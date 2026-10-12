@@ -1,7 +1,8 @@
 import { LockKeyhole, MailPlus, UserPlus, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { Avatar } from "@/components/avatar";
-import { Badge, DataTable } from "@/components/kinja/ui";
+import { Badge } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { CopyInviteLinkButton, RemoveMemberButton, RevokeInviteButton } from "@/components/team/team-actions";
 import type { InviteStatus } from "@/domain/model";
 import { roleLabels } from "@/domain/person";

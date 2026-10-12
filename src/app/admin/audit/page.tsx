@@ -1,6 +1,7 @@
 import { ScrollText } from "lucide-react";
 import { requireDashboardRole } from "@/auth/route-authorization";
-import { Badge, DashboardShell, DataTable, EmptyState } from "@/components/kinja/ui";
+import { Badge, DashboardShell, EmptyState } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { listAuditLog } from "@/ops/moderation";
 
 export default async function AuditLogPage() {

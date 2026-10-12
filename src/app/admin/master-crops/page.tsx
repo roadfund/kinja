@@ -1,7 +1,8 @@
 import { Sprout } from "lucide-react";
 import { listMasterCrops } from "@/admin/master-crops";
 import { requireDashboardRole } from "@/auth/route-authorization";
-import { Badge, DashboardShell, DataTable, EmptyState, formatDate, SectionHeader } from "@/components/kinja/ui";
+import { Badge, DashboardShell, EmptyState, formatDate, SectionHeader } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { AddCropForm, CropActions } from "./crop-list-actions";
 
 export default async function MasterCropsPage() {

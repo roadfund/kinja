@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireDashboardRole } from "@/auth/route-authorization";
-import { Badge, DashboardShell, DataTable, formatDate, SectionHeader, SummaryCard, SummaryGrid, type BadgeTone } from "@/components/kinja/ui";
+import { Badge, DashboardShell, formatDate, SectionHeader, SummaryCard, SummaryGrid, type BadgeTone } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { ReasonAction } from "@/components/ops/reason-action";
 import type { Hub } from "@/domain/model";
 import { listHubsForModeration } from "@/ops/moderation";

@@ -1,7 +1,8 @@
 import { History } from "lucide-react";
 import { currencyNames, listCurrencySettings, SUPPORTED_EXTRA_CURRENCIES } from "@/admin/exchange-rates";
 import { requireDashboardRole } from "@/auth/route-authorization";
-import { Badge, DashboardShell, DataTable, EmptyState, SectionHeader } from "@/components/kinja/ui";
+import { Badge, DashboardShell, EmptyState, SectionHeader } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { formatRate } from "@/domain/currency";
 import { CurrencyPanel } from "./currency-panel";
 

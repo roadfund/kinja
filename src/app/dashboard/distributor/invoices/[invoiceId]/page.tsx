@@ -1,7 +1,8 @@
 import { FileText, ReceiptText } from "lucide-react";
 import { notFound } from "next/navigation";
 import { requireOrganizationMember } from "@/auth/route-authorization";
-import { Badge, DashboardShell, DataTable, formatDate, SectionHeader, SummaryCard, SummaryGrid } from "@/components/kinja/ui";
+import { Badge, DashboardShell, formatDate, SectionHeader, SummaryCard, SummaryGrid } from "@/components/kinja/ui";
+import { DataTable } from "@/components/kinja/data-table";
 import { CollectionForm } from "@/components/market/collection-form";
 import { InvoiceStatusBadge, paymentMethods, SalesTable } from "@/components/market/market-tables";
 import { getMoneyContext } from "@/admin/exchange-rates";
