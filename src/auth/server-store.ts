@@ -26,6 +26,13 @@ export async function savePendingSignup(signup: PendingSignup, now = new Date())
   return token;
 }
 
+// Reads a pending signup without using it up (to pre-fill the onboarding form).
+export async function peekPendingSignup(token: string, now = new Date()): Promise<PendingSignup | null> {
+  const tokenHash = await hashToken(token);
+  const record = (await getRepository().list("PendingSignup")).find((item) => item.tokenHash === tokenHash);
+  return record && new Date(record.expiresAt) > now ? record : null;
+}
+
 // Single use: the record is removed once read.
 export async function consumePendingSignup(token: string, now = new Date()): Promise<PendingSignup | null> {
   const repository = getRepository();

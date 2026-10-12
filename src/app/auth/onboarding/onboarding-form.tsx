@@ -14,7 +14,7 @@ function Section({ title, description, children }: { title: string; description?
   return <fieldset className="space-y-4 rounded-2xl border border-[#dce2d9] bg-white p-5"><legend className="px-1 font-semibold text-[var(--kinja-green)]">{title}</legend>{description && <p className="-mt-2 text-sm text-[#718074]">{description}</p>}{children}</fieldset>;
 }
 
-export function OnboardingForm({ countries, categories }: { countries: CountryOption[]; categories: readonly string[] }) {
+export function OnboardingForm({ countries, categories, contact }: { countries: CountryOption[]; categories: readonly string[]; contact: { name: string; phone: string; email?: string } }) {
   const router = useRouter();
   const { run, pending, error, setError } = useJsonAction();
   const [countryId, setCountryId] = useState(countries.length === 1 ? countries[0].id : "");
@@ -87,12 +87,12 @@ export function OnboardingForm({ countries, categories }: { countries: CountryOp
       {certificateError && <p className="text-sm text-[#b42318]" role="alert">{certificateError}</p>}
     </Section>
 
-    <Section title="Contact person" description="Who Kinja should contact about this hub.">
+    <Section title="Contact person" description="Filled in from your signup. Change it if someone else should be contacted about this hub.">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Label required text="Full name"><input className={inputClass} maxLength={100} minLength={2} name="contactName" required /></Label>
+        <Label required text="Full name"><input className={inputClass} defaultValue={contact.name} maxLength={100} minLength={2} name="contactName" required /></Label>
         <Label required text="Title"><input className={inputClass} maxLength={80} minLength={2} name="contactTitle" placeholder="e.g. Director" required /></Label>
-        <Label required text="Phone"><input className={inputClass} name="contactPhone" placeholder={country ? `${country.dialCode} …` : "+231 77 000 0000"} required type="tel" /></Label>
-        <Label required text="Email"><input className={inputClass} name="contactEmail" required type="email" /></Label>
+        <Label required text="Phone"><input className={inputClass} defaultValue={contact.phone} name="contactPhone" placeholder={country ? `${country.dialCode} …` : "+231 77 000 0000"} required type="tel" /></Label>
+        <Label required text="Email"><input className={inputClass} defaultValue={contact.email} name="contactEmail" required type="email" /></Label>
       </div>
     </Section>
 
