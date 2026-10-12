@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { storedImage } from "@/domain/files";
+import { storeUpload } from "@/storage/uploads";
 import { hashPassword, PASSWORD_MIN_LENGTH, verifyPassword } from "@/auth/password";
 import { createSession, deleteSessionsForUser, type Account } from "@/auth/server-store";
 import { AuthorizationError } from "@/auth/authorization";
@@ -9,14 +11,14 @@ export const ProfileInput = z.object({
   fullName: z.string().trim().min(2).max(100),
   phone: z.string().trim().min(7).max(30),
   email: z.union([z.literal(""), z.string().trim().email()]).optional().transform((email) => email || undefined),
-  photoUrl: z.union([z.literal(""), z.string().startsWith("data:image/").max(300_000)]).optional().transform((photo) => photo || undefined),
+  photoUrl: z.union([z.literal(""), storedImage]).optional().transform((photo) => photo || undefined),
 });
 
 // People edit only their own profile; the username stays fixed.
 export async function updateProfile(account: Account, input: unknown, now = new Date()): Promise<User> {
   if (!account.user) throw new AuthorizationError("Sign in to continue", 401);
   const details = ProfileInput.parse(input);
-  const user: User = { ...account.user, ...details, updatedAt: now.toISOString() };
+  const user: User = { ...account.user, ...details, photoUrl: await storeUpload(details.photoUrl, "users"), updatedAt: now.toISOString() };
   await getRepository().put("User", user);
   return user;
 }

@@ -39,7 +39,7 @@ All auth routes live under `/auth/`. Nobody's account is created by hand: everyo
 | Route | Purpose |
 | --- | --- |
 | `/auth/login` | The single login for every role. Split-screen layout: brand panel on one side, form on the other; on mobile, form only. Username and password. |
-| `/auth/signup` | Create an account: full name (required), username (required), phone (required), email (optional), password (required). |
+| `/auth/signup` | Create an account: full name (required), username (required), phone (required), email, password (required). |
 | `/auth/onboarding` | For users who arrive without an invite: start a hub by entering the hub's business details (see Start a hub below). |
 | `/auth/invite/[code]` | Invite landing page. Shows who invited the user and to what role and organization, then sends them to sign up or log in and straight to their dashboard. |
 | `/auth/pending` | Waiting screen while a hub is being verified. |
@@ -136,7 +136,7 @@ Kinja is a production project. **Production data lives in Postgres on Neon** (`D
   - **Email** (invites, resets, monthly reports): a dev outbox screen shows every "sent" email and its link or code.
   - **Payouts**: a mock provider adapter simulates success, failure and delayed callbacks. Never put real provider credentials in the browser.
   - **Monthly reports**: generated when a hub admin or tech admin opens Kinja Ops on or after the 1st, if that month's report is missing.
-  - **File uploads** (certificates, logos): stored as data URLs with a strict size cap.
+  - **File uploads** (profile photos, farmer photos, hub logos, registration certificates): images are compressed on the device and sent as data URLs with a strict size cap. In production they are stored in an S3-compatible bucket (`AWS_ENDPOINT_URL_S3`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET`) and records keep a `/files/<folder>/<id>.<ext>` path. `/files/...` serves a file only to signed-in members (certificates: tech admin and that hub's admin) by redirecting to a link that expires in an hour; the bucket is never public. Without a bucket (local development) files stay inline as data URLs.
 
 ## Domain rules (enforce in code, cover with tests)
 

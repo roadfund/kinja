@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { storedImage } from "@/domain/files";
 
 export const Role = z.enum([
   "TECH_ADMIN",
@@ -144,7 +145,7 @@ export const User = z.object({
   // Required at signup (see auth/signup.ts); only system accounts such as the tech admin have none.
   phone: z.string().min(1).optional(),
   email: z.string().email().optional(),
-  photoUrl: z.string().startsWith("data:image/").max(300_000).optional(),
+  photoUrl: storedImage.optional(),
   passwordHash: z.string().min(1),
   passwordSalt: z.string().min(1),
 }).extend(AuditFields.shape);
@@ -216,7 +217,7 @@ export const FarmerDetails = z.object({
   community: z.string().trim().min(1),
   phone: z.string().trim().min(1).optional(),
   mobileMoneyNumber: z.string().trim().min(1).optional(),
-  photoUrl: z.string().startsWith("data:image/").max(300_000).optional(),
+  photoUrl: storedImage.optional(),
   householdSize: z.number().int().nonnegative().optional(),
   dependents: z.number().int().nonnegative().optional(),
   headOfHousehold: z.boolean().optional(),
@@ -263,7 +264,7 @@ export const PendingSignup = z.object({
   username: z.string().min(3),
   phone: z.string().min(1),
   email: z.string().email().optional(),
-  photoUrl: z.string().startsWith("data:image/").max(300_000).optional(),
+  photoUrl: storedImage.optional(),
   passwordHash: z.string().min(1),
   passwordSalt: z.string().min(1),
   expiresAt: z.string().datetime(),

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { hashPassword } from "@/auth/password";
 import { clientIp, consumeRateLimit, rateLimits } from "@/auth/rate-limit";
+import { storeUpload } from "@/storage/uploads";
 import { createSession, createUser, dashboardPath, findUserByUsername, loadAccount, savePendingSignup } from "@/auth/server-store";
 import { SignupInput, signupErrorFor, type SignupError } from "@/auth/signup";
 import { getRepository } from "@/repositories/server";
@@ -27,7 +28,8 @@ export async function POST(request: Request) {
   const { password, ...details } = parsed.data;
   if (await findUserByUsername(details.username)) return backToSignup(request, "taken");
   const passwordHash = await hashPassword(password);
-  const signup = { ...details, passwordHash, passwordSalt: passwordHash.split(".")[0] };
+  // The photo goes to object storage (when configured) before anything is saved.
+  const signup = { ...details, photoUrl: await storeUpload(details.photoUrl, "users"), passwordHash, passwordSalt: passwordHash.split(".")[0] };
 
   // Joining by invite: create the account and the membership, then go straight to the dashboard.
   const inviteCode = new URL(request.url).searchParams.get("invite");

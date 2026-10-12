@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { storeUpload } from "@/storage/uploads";
 import { africanCountryOptions, countries } from "@/config/countries";
 import { isValidPhone, normalizePhone } from "@/config/phone";
 
@@ -44,5 +45,6 @@ export async function validateHubOnboarding(input: unknown): Promise<HubOnboardi
   if (country.regions.length && !(country.regions as readonly string[]).includes(details.regionOrCounty)) throw new Error("Choose a region or county from the list");
   const contactPhone = normalizePhone(details.contactPhone, country.id);
   if (!isValidPhone(contactPhone, country.id)) throw new Error("The contact phone is not a valid number for this country");
-  return { ...details, contactPhone };
+  // Files go to object storage (when configured) only once everything else is valid.
+  return { ...details, contactPhone, logoUrl: await storeUpload(details.logoUrl, "logos"), registrationCertificateUrl: (await storeUpload(details.registrationCertificateUrl, "certificates"))! };
 }

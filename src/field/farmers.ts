@@ -1,6 +1,7 @@
 import { isValidPhone, normalizePhone } from "@/config/phone";
 import { createUuidV7 } from "@/domain/id";
 import { FarmerDetails, type Farmer } from "@/domain/model";
+import { storeUpload } from "@/storage/uploads";
 import { getRepository } from "@/repositories/server";
 
 export const FarmerInput = FarmerDetails;
@@ -21,7 +22,7 @@ async function prepareDetails(input: unknown, hubId: string) {
     if (!isValidPhone(normalized, countryId)) throw new Error(`${label} is not a valid number for this country`);
     return normalized;
   };
-  return { ...details, phone: phone(details.phone, "Phone"), mobileMoneyNumber: phone(details.mobileMoneyNumber, "Mobile money number") };
+  return { ...details, phone: phone(details.phone, "Phone"), mobileMoneyNumber: phone(details.mobileMoneyNumber, "Mobile money number"), photoUrl: await storeUpload(details.photoUrl, "farmers") };
 }
 
 // Registers a farmer. Devices send their own ids (UUIDv7) so records never need re-keying when they sync.
