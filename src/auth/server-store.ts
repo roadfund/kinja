@@ -13,19 +13,28 @@ const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const PLATFORM_HUB_ID = "platform";
 
 // Signups wait here for up to an hour while the person fills in onboarding.
-const runtime = globalThis as typeof globalThis & { __kinjaPendingSignups?: Map<string, PendingSignup> };
-const pendingSignups = runtime.__kinjaPendingSignups ??= new Map();
+const PENDING_SIGNUP_TTL_MS = 60 * 60 * 1000;
 
-export function savePendingSignup(signup: PendingSignup): string {
-  const token = createUuidV7();
-  pendingSignups.set(token, signup);
+// The signup form's details wait in the database until onboarding finishes (any server can
+// pick them up). The cookie holds a random token; only its hash is stored.
+export async function savePendingSignup(signup: PendingSignup, now = new Date()): Promise<string> {
+  const repository = getRepository();
+  for (const expired of (await repository.list("PendingSignup")).filter((item) => new Date(item.expiresAt) <= now)) await repository.remove("PendingSignup", expired.id);
+  const token = createToken();
+  const timestamp = now.toISOString();
+  await repository.put("PendingSignup", { id: createUuidV7(), tokenHash: await hashToken(token), ...signup, expiresAt: new Date(now.getTime() + PENDING_SIGNUP_TTL_MS).toISOString(), createdById: "self", createdAt: timestamp, updatedAt: timestamp });
   return token;
 }
 
-export function consumePendingSignup(token: string): PendingSignup | null {
-  const signup = pendingSignups.get(token) ?? null;
-  pendingSignups.delete(token);
-  return signup;
+// Single use: the record is removed once read.
+export async function consumePendingSignup(token: string, now = new Date()): Promise<PendingSignup | null> {
+  const repository = getRepository();
+  const tokenHash = await hashToken(token);
+  const record = (await repository.list("PendingSignup")).find((item) => item.tokenHash === tokenHash);
+  if (!record) return null;
+  await repository.remove("PendingSignup", record.id);
+  if (new Date(record.expiresAt) <= now) return null;
+  return { fullName: record.fullName, username: record.username, phone: record.phone, email: record.email, photoUrl: record.photoUrl, passwordHash: record.passwordHash, passwordSalt: record.passwordSalt };
 }
 
 export async function findUserByUsername(username: string): Promise<User | null> {

@@ -254,6 +254,21 @@ export const Session = z.object({
 }).extend(AuditFields.shape);
 export type Session = z.infer<typeof Session>;
 
+// Someone who has filled in the signup form but not yet onboarded their hub. Kept in the
+// database (not server memory) so the next step works on any server instance; expires in an hour.
+export const PendingSignup = z.object({
+  id: z.string().min(1),
+  tokenHash: z.string().min(1),
+  fullName: z.string().min(1),
+  username: z.string().min(3),
+  phone: z.string().min(1),
+  email: z.string().email().optional(),
+  photoUrl: z.string().startsWith("data:image/").max(300_000).optional(),
+  passwordHash: z.string().min(1),
+  passwordSalt: z.string().min(1),
+  expiresAt: z.string().datetime(),
+}).extend(AuditFields.shape);
+
 export const PasswordReset = z.object({
   id: z.string().min(1),
   tokenHash: z.string().min(1),
@@ -455,7 +470,7 @@ export const TransferDelivery = z.object({ transferId: z.string().min(1), delive
 export const BatchTransfer = z.object({ batchId: z.string().min(1), transferId: z.string().min(1) });
 export const InvoiceSale = z.object({ invoiceId: z.string().min(1), saleId: z.string().min(1) });
 
-export const EntitySchemas = { Country, Hub, HubVerification, Crop, HubCrop, Organization, User, Membership, Invite, Delivery, Payout, Farmer, Session, PasswordReset, OutboxEmail, ExchangeRate, CurrencySetting, Product, Transfer, Batch, Customer, Order, Sale, Invoice, Collection, MonthlyReport, AuditLog } as const;
+export const EntitySchemas = { Country, Hub, HubVerification, Crop, HubCrop, Organization, User, Membership, Invite, Delivery, Payout, Farmer, Session, PendingSignup, PasswordReset, OutboxEmail, ExchangeRate, CurrencySetting, Product, Transfer, Batch, Customer, Order, Sale, Invoice, Collection, MonthlyReport, AuditLog } as const;
 export type EntityName = keyof typeof EntitySchemas;
 export type EntityOf<T extends EntityName> = z.infer<(typeof EntitySchemas)[T]>;
 export type Entity = EntityOf<EntityName>;

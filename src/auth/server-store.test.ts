@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authenticate, dashboardPath } from "@/auth/server-store";
+import { authenticate, consumePendingSignup, dashboardPath, savePendingSignup } from "@/auth/server-store";
 import { useMemoryRepository } from "@/test/memory-repository";
 
 describe("dashboardPath", () => {
@@ -25,5 +25,24 @@ describe("tech admin first sign-in", () => {
       delete process.env.TECH_ADMIN_USERNAME;
       delete process.env.TECH_ADMIN_PASSWORD;
     }
+  });
+});
+
+describe("pending signups", () => {
+  const signup = { fullName: "Jimmy Kpadeh", username: "jimmy", phone: "+231770000001", passwordHash: "salt.hash", passwordSalt: "salt" };
+
+  it("keeps the signup in the database until onboarding uses it, once", async () => {
+    const repository = useMemoryRepository();
+    const token = await savePendingSignup(signup);
+    expect(await repository.list("PendingSignup")).toHaveLength(1);
+    expect((await repository.list("PendingSignup"))[0].tokenHash).not.toBe(token);
+    expect(await consumePendingSignup(token)).toMatchObject({ username: "jimmy", fullName: "Jimmy Kpadeh" });
+    expect(await consumePendingSignup(token)).toBeNull();
+  });
+
+  it("expires after an hour", async () => {
+    useMemoryRepository();
+    const token = await savePendingSignup(signup, new Date("2026-10-12T10:00:00.000Z"));
+    expect(await consumePendingSignup(token, new Date("2026-10-12T11:00:01.000Z"))).toBeNull();
   });
 });

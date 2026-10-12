@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   }
 
   // Starting a hub: details wait while the person fills in onboarding.
-  const token = savePendingSignup(signup);
+  const token = await savePendingSignup(signup);
   const response = NextResponse.redirect(new URL("/auth/onboarding", request.url), 303);
   response.cookies.set("kinja_pending_signup", token, { httpOnly: true, sameSite: "lax", maxAge: 60 * 60, path: "/" });
   return response;

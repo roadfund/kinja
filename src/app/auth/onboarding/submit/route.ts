@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   try {
     const details = await validateHubOnboarding(await request.json());
     const token = (await cookies()).get("kinja_pending_signup")?.value;
-    const signup = token ? consumePendingSignup(token) : null;
+    const signup = token ? await consumePendingSignup(token) : null;
     if (!signup) return Response.json({ error: "Your sign-up session expired. Please create your account again.", restart: true }, { status: 410 });
     const { sessionToken } = await createHubAccount(signup, details);
     const response = NextResponse.json({ redirect: "/auth/pending" });
