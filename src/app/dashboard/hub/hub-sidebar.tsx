@@ -2,11 +2,12 @@ import Link from "next/link";
 import type { Account } from "@/auth/server-store";
 import { ProfileLink, SidebarNav, type NavItem } from "@/components/kinja/sidebar-nav";
 import { SidebarUserCard } from "../sidebar-user-card";
-import { BarChart3, Factory, LayoutDashboard, Leaf, LogOut, Package, ReceiptText, Settings2, ShoppingBag, UsersRound, WalletCards } from "lucide-react";
+import { BarChart3, Factory, LayoutDashboard, Leaf, LogOut, Package, ReceiptText, Settings2, Sprout, ShoppingBag, UsersRound, WalletCards } from "lucide-react";
 
 const items = [
   { label: "Overview", href: "/dashboard/hub", icon: LayoutDashboard, always: true },
   { label: "Hub setup", href: "/admin/setup", icon: Settings2, always: true },
+  { label: "Crops", href: "/admin/crops", icon: Sprout, always: true },
   { label: "Team", href: "/admin/team", icon: UsersRound },
   { label: "Kinja Field", href: "/dashboard/hub?module=field", icon: Leaf },
   { label: "Kinja Pay", href: "/dashboard/hub?module=pay", icon: WalletCards },
