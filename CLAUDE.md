@@ -188,6 +188,7 @@ The app is mobile-first. Cooperative and field staff screens are used on low-end
 - `pnpm exec tsc --noEmit`: type-check
 - `pnpm test:e2e`: end-to-end tests (Playwright, not set up yet)
 - Seed and reset local data from the dev tools panel at `/dev` (development builds only)
+- Browse production data like tables: `pnpm db:views` (re)creates read-only views over `kinja_records` (users, hubs, organizations, memberships, customers, orders, order_lines, invoices, payments, products, batches, transfers, farmers, deliveries, exchange_rates) from `scripts/database-views.sql`. Re-run it after adding fields you want to see. Kinja itself never reads the views.
 - Import real sales history into production with `pnpm import:sheet --sheet "<link>" --hub "<hub name>"` (add `--yes` to write). It reads `DATABASE_URL` from `.env.production.local`, imports into an existing verified hub, creates no user accounts, and only adds orders not already there. Dev tools (`/dev`) are disabled whenever `DATABASE_URL` is set, so they can never wipe the real database.
 - Import a hub's real sales history from its order spreadsheet (Google Sheet shared by link) at `/dev`, "Import sales history". It replaces the data with the base demo plus every order, customer, payment and exchange rate from the sheet; imported orders keep their own numbers (e.g. JSK0001) as `reference`. The sheet is fetched at import time and cached in `.data/import` (git-ignored), so real customer data never enters the repo.
 
